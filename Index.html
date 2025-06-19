@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Einkaufsliste</title>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2769/2769339.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* Root Variables */
+        :root {
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --border-color: #dee2e6;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+
+        /* Hamburger Menu */
+        .hamburger-menu {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+        }
+
+        .hamburger-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .hamburger-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .menu-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: none;
+            min-width: 280px;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .menu-dropdown.show {
+            display: block;
+        }
+
+        .menu-dropdown input {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .menu-item {
+            display: block;
+            width: 100%;
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 4px;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .menu-item:hover {
+            background: var(--light-color);
+        }
+
+        .menu-item.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .menu-item.primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .menu-item.secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .menu-item.secondary:hover {
+            background: #5a6268;
+        }
+
+        .menu-item.danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .menu-item.danger:hover {
+            background: #c82333;
+        }
+
+        .menu-item:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #menu-auth-message {
+            color: var(--danger-color);
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Auth Message */
+        .auth-message-main {
+            text-align: center;
+            color: var(--secondary-color);
+            padding: 3rem 2rem;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin: 2rem 0;
+        }
+
+        .auth-message-main i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .auth-message-main p {
+            font-size: 1.1rem;
+        }
+
+        /* Authentication status */
+        .auth-status {
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .auth-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .auth-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Content Disabled State */
+        .content-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* Shopping List */
+        .shopping-list {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .add-item-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .add-item-form {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 2fr 120px;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+
+        .add-item-form input,
+        .add-item-form select,
+        .add-item-form textarea {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .add-item-form textarea {
+            resize: vertical;
+            min-height: 2.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Filter and Sort Section */
+        .filter-sort-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-sort-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+            color: var(--text-color);
+        }
+
+        .control-group input,
+        .control-group select {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .filter-badges {
+            margin-top: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .filter-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .filter-badge .remove-filter {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .clear-filters-btn {
+            background: var(--secondary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .clear-filters-btn:hover {
+            background: #5a6268;
+        }
+
+        .no-items-message {
+            text-align: center;
+            padding: 2rem;
+            color: var(--secondary-color);
+            font-style: italic;
+        }
+
+        .shopping-item {
+            display: grid;
+            grid-template-columns: 50px 1fr auto auto;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .shopping-item:hover {
+            background: var(--light-color);
+        }
+
+        .shopping-item.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .shopping-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .item-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .item-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .item-details {
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+        }
+
+        .item-notes {
+            font-size: 0.85rem;
+            color: var(--info-color);
+            margin-top: 0.25rem;
+            font-style: italic;
+        }
+
+        .item-notes-input {
+            width: 100%;
+            padding: 0.25rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            font-family: inherit;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .item-actions button {
+            padding: 0.25rem 0.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: var(--danger-color);
+            color: white;
+            margin-left: 0.25rem;
+        }
+
+        .item-actions button.edit-btn {
+            background: var(--secondary-color);
+        }
+
+        .item-actions button.edit-btn:hover {
+            background: #5a6268;
+        }
+
+        .item-actions button:hover {
+            opacity: 0.8;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0.5rem;
+            }
+
+            .hamburger-menu {
+                top: 0.5rem;
+                right: 0.5rem;
+            }
+
+            .menu-dropdown {
+                min-width: calc(100vw - 2rem);
+                right: -0.5rem;
+            }
+
+            .add-item-form {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .shopping-item {
+                grid-template-columns: 40px 1fr auto;
+                gap: 0.5rem;
+            }
+
+            .filter-sort-controls {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .filter-badges {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .filter-sort-controls {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hamburger Menu -->
+    <div class="hamburger-menu">
+        <button class="hamburger-btn" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="menu-dropdown" id="menuDropdown">
+            <div id="menu-auth-section">
+                <div id="auth-status" class="auth-status" style="display:none;"></div>
+                <input id="menu-email-input" type="email" placeholder="Email" />
+                <input id="menu-password-input" type="password" placeholder="Passwort" />
+                <button id="menu-login-btn" class="menu-item primary">Login</button>
+                <button id="menu-logout-btn" class="menu-item danger" style="display:none;">Logout</button>
+                <div id="menu-auth-message"></div>
+            </div>
+            <hr>
+            <button id="menu-export-pdf" class="menu-item primary">
+                <i class="fas fa-file-pdf"></i> PDF Export
+            </button>
+            <button id="menu-clear-list" class="menu-item secondary">
+                <i class="fas fa-trash"></i> Liste leeren
+            </button>
+            
+   <button id="menu-clear-completed" class="menu-item secondary">
+    <i class="fas fa-check-double"></i> Erledigte löschen
+</button>   
+            
+      <a href="https://urlaubskalender.github.io/Elite/" class="menu-item">
+    <i class="fas fa-home"></i> Urlaubskalender
+</a>
+
+<a href="https://urlaubskalender.github.io/todo/" class="menu-item">
+    <i class="fas fa-home"></i> todo list
+</a>      
+            
+            
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-shopping-cart"></i> Smart Einkaufsliste</h1>
+            <div class="user-info" id="user-info" style="display:none;">
+                <span id="user-email"></span>
+            </div>
+        </header>
+
+        <!-- Auth Message -->
+        <div id="auth-message-main" class="auth-message-main">
+            <i class="fas fa-lock"></i>
+            <p>Bitte melden Sie sich an, um Ihre Einkaufslisten zu verwalten.</p>
+        </div>
+
+        <div id="main-content" class="content-disabled">
+            <!-- Add Item Section -->
+            <div class="add-item-section">
+                <h3><i class="fas fa-plus-circle"></i> Neuen Artikel hinzufügen</h3>
+                <div class="add-item-form">
+                    <input type="text" id="item-name" placeholder="Artikelname" required>
+                    <input type="number" id="item-quantity" placeholder="Menge" min="1" value="1">
+                    <select id="item-category">
+                        <option value="auto">🤖 KI Automatisch</option>
+                        <option value="obst-gemüse">Obst & Gemüse</option>
+                        <option value="fleisch-fisch">Fleisch & Fisch</option>
+                        <option value="milchprodukte">Milchprodukte & Eier</option>
+                        <option value="getränke">Getränke</option>
+                        <option value="backwaren">Brot & Backwaren</option>
+                        <option value="konserven">Konserven & Haltbares</option>
+                        <option value="tiefkühl">Tiefkühlkost</option>
+                        <option value="süßwaren">Süßwaren & Snacks</option>
+                        <option value="gewürze">Gewürze & Öle</option>
+                        <option value="haushalt">Haushalt & Reinigung</option>
+                        <option value="hygiene">Körperpflege & Hygiene</option>
+                        <option value="baby">Baby & Kind</option>
+                        <option value="tiernahrung">Tiernahrung</option>
+                        <option value="sonstiges">Sonstiges</option>
+                    </select>
+                    <textarea id="item-notes" placeholder="Notizen (optional)" rows="1"></textarea>
+                    <button type="button" class="btn-primary" onclick="addItem()">
+                        <i class="fas fa-plus"></i> Hinzufügen
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter and Sort Section -->
+            <div class="filter-sort-section">
+                <h3><i class="fas fa-filter"></i> Filter & Sortierung</h3>
+                <div class="filter-sort-controls">
+                    <div class="control-group">
+                        <label for="search-filter">🔍 Suche</label>
+                        <input type="text" id="search-filter" placeholder="Nach Artikelname suchen..." oninput="applyFilters()">
+                    </div>
+                    <div class="control-group">
+                        <label for="category-filter">📂 Kategorie</label>
+                        <select id="category-filter" onchange="applyFilters()">
+                            <option value="">Alle Kategorien</option>
+                            <option value="obst-gemüse">Obst & Gemüse</option>
+                            <option value="fleisch-fisch">Fleisch & Fisch</option>
+                            <option value="milchprodukte">Milchprodukte & Eier</option>
+                            <option value="getränke">Getränke</option>
+                            <option value="backwaren">Brot & Backwaren</option>
+                            <option value="konserven">Konserven & Haltbares</option>
+                            <option value="tiefkühl">Tiefkühlkost</option>
+                            <option value="süßwaren">Süßwaren & Snacks</option>
+                            <option value="gewürze">Gewürze & Öle</option>
+                            <option value="haushalt">Haushalt & Reinigung</option>
+                            <option value="hygiene">Körperpflege & Hygiene</option>
+                            <option value="baby">Baby & Kind</option>
+                            <option value="tiernahrung">Tiernahrung</option>
+                            <option value="sonstiges">Sonstiges</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="status-filter">✅ Status</label>
+                        <select id="status-filter" onchange="applyFilters()">
+                            <option value="">Alle Artikel</option>
+                            <option value="pending">Noch zu kaufen</option>
+                            <option value="completed">Erledigt</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="sort-by">📊 Sortierung</label>
+                        <select id="sort-by" onchange="applyFilters()">
+                            <option value="dateAdded">Datum hinzugefügt</option>
+                            <option value="name">Name A-Z</option>
+                            <option value="category">Kategorie</option>
+                            <option value="quantity">Menge</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Filter Badges -->
+                <div class="filter-badges" id="filter-badges" style="display: none;">
+                    <!-- Filter badges will be added here dynamically -->
+                </div>
+            </div>
+
+            <!-- Shopping List -->
+            <div class="shopping-list" id="shopping-list">
+                <!-- Items will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+        import { getDatabase, ref, set, get, child, onValue, update } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAjF0SlQ_wZlGYBIBlL2aVQdvO1kcgi0Us",
+            authDomain: "projekt1-12e20.firebaseapp.com",
+            databaseURL: "https://projekt1-12e20-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "projekt1-12e20",
+            storageBucket: "projekt1-12e20.firebasestorage.app",
+            messagingSenderId: "175090852891",
+            appId: "1:175090852891:web:77f9da5b2378f222cd84be"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Global Variables
+        let currentUser = null;
+        let dbPath = '';
+        let shoppingItems = [];
+        let filteredItems = [];
+
+        // DOM Elements
+        const mainContent = document.getElementById('main-content');
+        const authMessageMain = document.getElementById('auth-message-main');
+        const userInfo = document.getElementById('user-info');
+        const userEmail = document.getElementById('user-email');
+        const shoppingList = document.getElementById('shopping-list');
+
+        // Auth elements
+        const emailInput = document.getElementById('menu-email-input');
+        const passwordInput = document.getElementById('menu-password-input');
+        const loginBtn = document.getElementById('menu-login-btn');
+        const logoutBtn = document.getElementById('menu-logout-btn');
+        const authMessage = document.getElementById('menu-auth-message');
+        const authStatus = document.getElementById('auth-status');
+
+        // Filter elements
+        const searchFilter = document.getElementById('search-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const statusFilter = document.getElementById('status-filter');
+        const sortBy = document.getElementById('sort-by');
+        const filterBadges = document.getElementById('filter-badges');
+
+        // Hamburger Menu Functions
+        window.toggleMenu = function() {
+            const dropdown = document.getElementById('menuDropdown');
+            dropdown.classList.toggle('show');
+        };
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.querySelector('.hamburger-menu');
+            if (!menu.contains(event.target)) {
+                document.getElementById('menuDropdown').classList.remove('show');
+            }
+        });
+
+        // Filter and Sort Functions
+        window.applyFilters = function() {
+            if (!currentUser) return;
+
+            const searchTerm = searchFilter.value.toLowerCase().trim();
+            const categoryValue = categoryFilter.value;
+            const statusValue = statusFilter.value;
+            const sortValue = sortBy.value;
+
+            // Filter items
+            filteredItems = shoppingItems.filter(item => {
+                const matchesSearch = !searchTerm || 
+                    item.name.toLowerCase().includes(searchTerm) ||
+                    (item.notes && item.notes.toLowerCase().includes(searchTerm));
+                const matchesCategory = !categoryValue || item.category === categoryValue;
+                const matchesStatus = !statusValue || 
+                    (statusValue === 'completed' && item.completed) ||
+                    (statusValue === 'pending' && !item.completed);
+
+                return matchesSearch && matchesCategory && matchesStatus;
+            });
+
+            // Sort items
+            filteredItems.sort((a, b) => {
+                switch (sortValue) {
+                    case 'name':
+                        return a.name.localeCompare(b.name);
+                    case 'category':
+                        return a.category.localeCompare(b.category);
+                    case 'quantity':
+                        return b.quantity - a.quantity;
+                    case 'dateAdded':
+                    default:
+                        return new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0);
+                }
+            });
+
+            updateFilterBadges();
+            updateShoppingList();
+        };
+
+        function updateFilterBadges() {
+            const searchTerm = searchFilter.value.trim();
+            const categoryValue = categoryFilter.value;
+            const statusValue = statusFilter.value;
+            
+            const badges = [];
+            
+            if (searchTerm) {
+                badges.push({
+                    type: 'search',
+                    text: `Suche: "${searchTerm}"`,
+                    clear: () => {
+                        searchFilter.value = '';
+                        applyFilters();
+                    }
+                });
+            }
+            
+            if (categoryValue) {
+                const categoryText = categoryFilter.options[categoryFilter.selectedIndex].text;
+                badges.push({
+                    type: 'category',
+                    text: `Kategorie: ${categoryText}`,
+                    clear: () => {
+                        categoryFilter.value = '';
+                        applyFilters();
+                    }
+                });
+            }
+            
+            if (statusValue) {
+                const statusText = statusFilter.options[statusFilter.selectedIndex].text;
+                badges.push({
+                    type: 'status',
+                    text: `Status: ${statusText}`,
+                    clear: () => {
+                        statusFilter.value = '';
+                        applyFilters();
+                    }
+                });
+            }
+            
+            if (badges.length === 0) {
+                filterBadges.style.display = 'none';
+                filterBadges.innerHTML = '';
+                return;
+            }
+            
+            filterBadges.style.display = 'flex';
+            filterBadges.innerHTML = badges.map(badge => `
+                <div class="filter-badge">
+                    ${badge.text}
+                    <button class="remove-filter" onclick="(${badge.clear.toString()})()">×</button>
+                </div>
+            `).join('') + `
+                <button class="clear-filters-btn" onclick="clearAllFilters()">
+                    Alle Filter löschen
+                </button>
+            `;
+        }
+
+        window.clearAllFilters = function() {
+            searchFilter.value = '';
+            categoryFilter.value = '';
+            statusFilter.value = '';
+            sortBy.value = 'dateAdded';
+            applyFilters();
+        };
+
+        // Category mapping for automatic assignment - Erweiterte Schlüsselwörter
+        const categoryKeywords = {
+            'obst-gemüse': [
+                // Obst
+                'apfel', 'äpfel', 'banane', 'bananen', 'orange', 'orangen', 'mandarine', 'mandarinen', 'clementine', 'clementinen',
+                'birne', 'birnen', 'traube', 'trauben', 'weintraube', 'weintrauben', 'erdbeere', 'erdbeeren', 'himbeere', 'himbeeren', 
+                'blaubeere', 'blaubeeren', 'heidelbeere', 'heidelbeeren', 'brombeere', 'brombeeren', 'kirsche', 'kirschen', 'sauerkirsche',
+                'pfirsich', 'pfirsiche', 'nektarine', 'nektarinen', 'pflaume', 'pflaumen', 'zwetschge', 'zwetschgen', 'aprikose', 'aprikosen',
+                'ananas', 'mango', 'papaya', 'kiwi', 'passionsfrucht', 'maracuja', 'litschi', 'rambutan', 'drachenfrucht',
+                'melone', 'wassermelone', 'honigmelone', 'cantaloupe', 'galiamelone', 'zitrone', 'zitronen', 'limette', 'limetten', 
+                'grapefruit', 'pomelo', 'avocado', 'avocados', 'kokosnuss', 'kokos', 'feige', 'feigen', 'dattel', 'datteln',
+                // Gemüse
+                'tomate', 'tomaten', 'cherry', 'cherrytomaten', 'rispentomaten', 'strauchtomaten', 'fleischtomaten', 
+                'gurke', 'gurken', 'salatgurke', 'schälgurke', 'einlegegurken', 'cornichons',
+                'paprika', 'paprikaschoten', 'roter paprika', 'gelber paprika', 'grüner paprika', 'spitzpaprika', 'peperoni', 'chili', 'chilischoten',
+                'karotte', 'karotten', 'möhre', 'möhren', 'babymöhren', 'bundmöhren', 'rübe', 'rüben', 'pastinake', 'pastinaken',
+                'zwiebel', 'zwiebeln', 'gemüsezwiebel', 'rote zwiebel', 'schalotte', 'schalotten', 'frühlingszwiebel', 'frühlingszwiebeln',
+                'knoblauch', 'knoblauchzehe', 'knoblauchzehen', 'ingwer', 'ingwerwurzel',
+                'kartoffel', 'kartoffeln', 'pellkartoffeln', 'salatkartoffeln', 'festkochende', 'mehligkochende', 'süßkartoffel', 'süßkartoffeln',
+                'salat', 'blattsalat', 'kopfsalat', 'eisbergsalat', 'römersalat', 'lollo', 'eichblatt', 'feldsalat', 'rapunzel', 'rucola', 'rauke',
+                'spinat', 'babyspinat', 'blattspinat', 'mangold', 'grünkohl', 'wirsing', 'weißkohl', 'rotkohl', 'spitzkohl', 'chinakohl',
+                'brokkoli', 'blumenkohl', 'romanesco', 'rosenkohl', 'kohlrabi', 'pak choi', 'bok choy',
+                'zucchini', 'aubergine', 'auberginen', 'kürbis', 'hokkaido', 'butternut', 'muskat',
+                'radieschen', 'rettich', 'meerrettich', 'schwarzrettich', 'sellerie', 'knollensellerie', 'stangensellerie',
+                'lauch', 'porree', 'fenchel', 'fenchelknolle', 'artischocke', 'artischocken',
+                'spargel', 'grüner spargel', 'weißer spargel', 'spargelstangen', 'bambussprossen',
+                'mais', 'zuckermais', 'maiskolben', 'babymais',
+                // Kräuter
+                'petersilie', 'schnittlauch', 'basilikum', 'thymian', 'rosmarin', 'oregano', 'majoran',
+                'dill', 'koriander', 'minze', 'pfefferminz', 'salbei', 'liebstöckel', 'estragon', 'kerbel',
+                // Pilze
+                'champignon', 'champignons', 'pilze', 'steinpilze', 'pfifferlinge', 'shiitake', 'austernpilze', 'portobello'
+            ],
+            'fleisch-fisch': [
+                // Geflügel
+                'hähnchen', 'hühnchen', 'huhn', 'hühnerbrust', 'hähnchenfilet', 'hähnchenschenkel', 'hähnchenflügel', 'chicken',
+                'pute', 'putenbrust', 'putenfilet', 'putenschnitzel', 'putenhack', 'truthahn', 'ente', 'entenbrust', 'gans',
+                // Rind
+                'rind', 'rindfleisch', 'rindersteak', 'ribeye', 'filet', 'rinderfilet', 'roastbeef', 'rinderhack', 'hackfleisch', 'hack',
+                'rinderbraten', 'sauerbraten', 'gulasch', 'rindergulasch', 'tafelspitz', 'rinderbrust',
+                // Schwein
+                'schwein', 'schweinefleisch', 'schweinefilet', 'schweineschnitzel', 'schweinebraten', 'schweinerücken', 'schweinehack',
+                'schweinebauch', 'speck', 'bauchspeck', 'rückenspeck', 'schinken', 'kochschinken', 'rohschinken',
+                'kassler', 'leberkäse', 'fleischkäse', 'schnitzel', 'wiener schnitzel', 'cordon bleu',
+                // Lamm/Wild
+                'lamm', 'lammfilet', 'lammkeule', 'lammrücken', 'hirsch', 'hirschfilet', 'reh', 'rehfilet', 'wildschwein',
+                'hase', 'kaninchen', 'kaninchenkeule',
+                // Wurst
+                'bratwurst', 'rostbratwurst', 'thüringer', 'nürnberger', 'weißwurst', 'leberwurst', 'blutwurst', 'mortadella',
+                'fleischwurst', 'jagdwurst', 'bierwurst', 'salami', 'chorizo', 'pepperoni', 'mettwurst', 'teewurst',
+                'wiener', 'würstchen', 'frankfurter', 'bockwurst', 'knackwurst', 'currywurst', 'cabanossi',
+                // Fisch
+                'lachs', 'lachsfilet', 'räucherlachs', 'forelle', 'forellenfilet', 'räucherforelle', 'thunfisch', 'thunfischfilet',
+                'kabeljau', 'dorsch', 'seelachs', 'alaska seelachs', 'heilbutt', 'scholle', 'seezunge', 'steinbutt', 'wolfsbarsch',
+                'dorade', 'brasse', 'hering', 'bismarck', 'rollmops', 'matjes', 'sardine', 'sardinen', 'anchovis', 'makrele',
+                'aal', 'räucheraal', 'zander', 'barsch', 'karpfen', 'pangasius', 'tilapia', 'redfish', 'rotbarsch',
+                'fisch', 'fischfilet', 'fischsteak', 'fischstäbchen',
+                // Meeresfrüchte
+                'garnele', 'garnelen', 'shrimp', 'prawns', 'riesengarnelen', 'krabben', 'nordseekrabben', 'hummer', 'languste',
+                'muschel', 'muscheln', 'miesmuschel', 'venusmuschel', 'jakobsmuschel', 'austern', 'tintenfisch', 'calamari', 'oktopus'
+            ],
+            'milchprodukte': [
+                // Milch
+                'milch', 'vollmilch', 'fettarme milch', 'magermilch', 'rohmilch', 'biomilch', 'laktosefreie milch', 'heumilch',
+                'hafermilch', 'mandelmilch', 'sojamilch', 'reismilch', 'kokosmilch', 'cashewmilch', 'dinkelmilch',
+                'kondensmilch', 'dosenmilch', 'buttermilch', 'molke', 'kefir',
+                // Butter/Margarine
+                'butter', 'süßrahmbutter', 'sauerrahmbutter', 'kräuterbutter', 'knoblauchbutter', 'margarine', 'pflanzenmargarine',
+                'halbfettbutter', 'schmalz', 'butterschmalz', 'ghee',
+                // Käse
+                'käse', 'hartkäse', 'schnittkäse', 'weichkäse', 'frischkäse', 'gouda', 'emmental', 'schweizer käse', 'gruyère',
+                'parmesan', 'parmigiano', 'reggiano', 'pecorino', 'grana padano', 'cheddar', 'chester', 'edam', 'edamer',
+                'tilsiter', 'butterkäse', 'raclette', 'appenzeller', 'camembert', 'brie', 'roquefort', 'gorgonzola', 'stilton',
+                'mozzarella', 'büffelmozzarella', 'burrata', 'ricotta', 'mascarpone', 'feta', 'schafskäse', 'ziegenkäse',
+                'halloumi', 'paneer', 'cottage cheese', 'hüttenkäse', 'körniger frischkäse', 'philadelphia',
+                'quark', 'magerquark', 'speisequark', 'topfen', 'skyr', 'griechischer joghurt',
+                // Joghurt
+                'joghurt', 'jogurt', 'naturjoghurt', 'vollmilchjoghurt', 'magermilchjoghurt', 'fruchtjoghurt', 'vanillejoghurt',
+                'erdbeerjoghurt', 'heidelbeerjoghurt', 'pfirsichjoghurt', 'multivitamin joghurt', 'probiotischer joghurt',
+                // Sahne/Creme
+                'sahne', 'schlagsahne', 'süße sahne', 'saure sahne', 'schmand', 'crème fraîche', 'cooking cream', 'kochsahne',
+                'sprühsahne', 'schlagfix', 'kaffeesahne', 'konditorsahne',
+                // Eier
+                'ei', 'eier', 'hühnereier', 'freilandeier', 'bio-eier', 'bodenhaltung', 'wachteleier', 'enteneier'
+            ],
+            'getränke': [
+                // Wasser
+                'wasser', 'mineralwasser', 'sprudelwasser', 'sprudel', 'kohlensäurehaltiges wasser', 'stillewasser', 'stilles wasser',
+                'leitungswasser', 'tafelwasser', 'quellwasser', 'heilwasser', 'gerolsteiner', 'volvic', 'evian', 'san pellegrino',
+                // Säfte
+                'orangensaft', 'apfelsaft', 'traubensaft', 'ananassaft', 'grapefruitsaft', 'cranberrysaft', 'kirschsaft', 'birnensaft',
+                'multivitaminsaft', 'multivitamin', 'saft', 'direktsaft', 'fruchtsaft', 'nektar', 'fruchtnektar', 'smoothie',
+                'gemüsesaft', 'tomatensaft', 'karottensaft', 'rote beete saft',
+                // Softdrinks
+                'limonade', 'limo', 'cola', 'coca cola', 'pepsi', 'fanta', 'sprite', 'seven up', 'schweppes', 'bitter lemon',
+                'ginger ale', 'tonic water', 'ginger beer', 'energy drink', 'energy', 'red bull', 'monster', 'rockstar',
+                'isotonisches getränk', 'isotonisch', 'powerade', 'gatorade', 'aquarius',
+                // Alkoholische Getränke
+                'bier', 'pils', 'pilsener', 'weizen', 'weißbier', 'hefeweizen', 'kölsch', 'alt', 'märzen', 'oktoberfest',
+                'lager', 'export', 'alkoholfrei', 'alkoholfreies bier', 'radler', 'alster', 'malzbier',
+                'wein', 'rotwein', 'weißwein', 'rosé', 'sekt', 'prosecco', 'champagner', 'cava', 'schaumwein', 'perlwein',
+                'riesling', 'chardonnay', 'sauvignon blanc', 'pinot grigio', 'gewürztraminer', 'spätburgunder', 'dornfelder',
+                'vodka', 'whiskey', 'whisky', 'bourbon', 'scotch', 'rum', 'gin', 'tequila', 'cognac', 'brandy', 'grappa',
+                'ouzo', 'sambuca', 'limoncello', 'schnapps', 'korn', 'klarer', 'obstbrand', 'weinbrand',
+                // Heißgetränke
+                'kaffee', 'espresso', 'cappuccino', 'latte macchiato', 'americano', 'mokka', 'filterkaffee', 'instant kaffee',
+                'entkoffeiniert', 'koffeinfrei', 'kaffeebohnen', 'kaffeepulver', 'kaffeepads', 'kapseln', 'nespresso',
+                'tee', 'schwarztee', 'grüntee', 'weißer tee', 'oolong', 'earl grey', 'english breakfast', 'darjeeling', 'assam',
+                'kräutertee', 'früchtetee', 'kamillentee', 'pfefferminztee', 'fencheltee', 'hagebuttentee', 'rooibos', 'chai', 'matcha',
+                'kakao', 'heißeschokolade', 'trinkschokolade', 'malzkaffee', 'getreidekaffee',
+                'punsch', 'glühwein', 'feuerzangenbowle'
+            ],
+            'backwaren': [
+                // Brot
+                'brot', 'vollkornbrot', 'weißbrot', 'graubrot', 'mischbrot', 'schwarzbrot', 'pumpernickel', 'roggenbrot', 'weizenbrot',
+                'dinkelbrot', 'mehrkornbrot', 'körnerbrot', 'sonnenblumenkernbrot', 'nussbrot', 'zwiebelbrot', 'landbrot', 'bauernbrot',
+                'kastenbrot', 'toastbrot', 'toast', 'vollkorntoast', 'sandwich', 'panini', 'ciabatta', 'focaccia', 'baguette',
+                'fladenbrot', 'pita', 'naan', 'chapati', 'tortilla', 'wrap', 'knäckebrot', 'zwieback',
+                // Brötchen
+                'brötchen', 'semmeln', 'schrippen', 'weck', 'rundstück', 'weizenbrötchen', 'vollkornbrötchen', 'mohnbrötchen',
+                'sesambrötchen', 'sonntagsbrötchen', 'kaiser', 'kaiserbrötchen', 'laugenbrezeln', 'laugenstangen', 'laugenbrötchen',
+                'croissant', 'pain au chocolat', 'franzbrötchen', 'bagel', 'english muffin', 'burger buns',
+                // Süße Backwaren
+                'kuchen', 'torte', 'obstkuchen', 'apfelkuchen', 'käsekuchen', 'quarkkuchen', 'streuselkuchen', 'gugelhupf',
+                'rührkuchen', 'marmorkuchen', 'zitronenkuchen', 'schokoladenkuchen', 'sachertorte', 'schwarzwälder',
+                'muffin', 'muffins', 'cupcake', 'cupcakes', 'donut', 'donuts', 'berliner', 'krapfen', 'pfannkuchen',
+                'hefezopf', 'stollen', 'christstollen', 'lebkuchen', 'pfefferkuchen', 'spekulatius',
+                'kekse', 'plätzchen', 'cookies', 'butterkekse', 'digestive', 'oreo', 'leibniz', 'shortbread',
+                'waffeln', 'eiswaffeln', 'belgische waffeln', 'stroopwafel', 'crepes', 'eierkuchen', 'pancakes'
+            ],
+            'konserven': [
+                // Konserven allgemein
+                'dose', 'dosen', 'konserve', 'konserven', 'büchse', 'glas', 'einmachglas',
+                // Tomatenprodukte
+                'tomatenmark', 'passierte tomaten', 'stückige tomaten', 'gehackte tomaten', 'tomaten geschält', 'tomatensauce',
+                'pizza sauce', 'arrabiata', 'bolognese', 'pesto', 'pesto rosso', 'pesto verde',
+                // Nudeln und Getreide
+                'nudeln', 'spaghetti', 'penne', 'fusilli', 'tagliatelle', 'lasagne', 'cannelloni', 'ravioli', 'tortellini',
+                'reis', 'basmati', 'jasmin reis', 'vollkornreis', 'wildreis', 'risotto reis', 'paella reis',
+                'quinoa', 'bulgur', 'couscous', 'hirse', 'buchweizen', 'dinkel', 'gerste', 'hafer', 'haferflocken',
+                'mehl', 'weizenmehl', 'vollkornmehl', 'dinkelmehl', 'roggenmehl', 'maismehl', 'buchweizenmehl',
+                // Hülsenfrüchte
+                'bohnen', 'kidneybohnen', 'weiße bohnen', 'schwarze bohnen', 'lima bohnen', 'cannellini', 'borlotti',
+                'linsen', 'rote linsen', 'grüne linsen', 'beluga linsen', 'gelbe linsen',
+                'kichererbsen', 'erbsen', 'split erbsen', 'gelbe erbsen', 'grüne erbsen',
+                // Öle und Essig
+                'olivenöl', 'sonnenblumenöl', 'rapsöl', 'kokosöl', 'sesamöl', 'walnussöl', 'kürbiskernöl', 'leinöl',
+                'essig', 'balsamico', 'weißweinessig', 'rotweinessig', 'apfelessig', 'reisessig',
+                // Süßungsmittel
+                'zucker', 'rohrzucker', 'brauner zucker', 'puderzucker', 'vanillezucker', 'honig', 'ahornsirup', 'agavendicksaft',
+                // Konservierte Lebensmittel
+                'thunfisch', 'sardinen', 'anchovis', 'lachs', 'makrele', 'hering',
+                'mais', 'erbsen', 'karotten', 'bohnen', 'sauerkraut', 'rotkohl', 'weißkohl',
+                'oliven', 'kapern', 'eingelegte gurken', 'gewürzgurken', 'cornichons', 'pepperoni',
+                'marmelade', 'konfitüre', 'gelee', 'honig', 'nuss-nougat-creme', 'erdnussbutter'
+            ],
+            'tiefkühl': [
+                'tiefkühl', 'gefroren', 'tk', 'frozen',
+                'tiefkühlgemüse', 'gefrorenes gemüse', 'tk gemüse', 'erbsen gefroren', 'bohnen gefroren', 'spinat gefroren',
+                'brokkoli gefroren', 'blumenkohl gefroren', 'karotten gefroren', 'mais gefroren', 'gemüsemischung',
+                'tiefkühlobst', 'gefrorenes obst', 'beeren gefroren', 'erdbeeren gefroren', 'himbeeren gefroren',
+                'heidelbeeren gefroren', 'brombeeren gefroren', 'mango gefroren', 'ananas gefroren',
+                'fischstäbchen', 'schlemmerfilet', 'fisch gefroren', 'lachs gefroren', 'garnelen gefroren',
+                'pizza', 'tiefkühlpizza', 'tk pizza', 'steinofenpizza', 'flammkuchen',
+                'pommes', 'pommes frites', 'kroketten', 'rösti', 'kartoffelecken', 'süßkartoffelpommes',
+                'hähnchen nuggets', 'chicken nuggets', 'schnitzel gefroren', 'cordon bleu gefroren',
+                'eis', 'speiseeis', 'vanilla eis', 'schokoladeneis', 'erdbeereis', 'stracciatella', 'pistazie eis',
+                'ben jerry', 'häagen dazs', 'magnum', 'cornetto', 'solero', 'calippo'
+            ],
+            'süßwaren': [
+                'schokolade', 'vollmilchschokolade', 'zartbitterschokolade', 'weiße schokolade', 'nussschokolade',
+                'milka', 'ritter sport', 'lindt', 'ferrero', 'toblerone', 'kinder', 'mars', 'snickers', 'twix',
+                'gummibärchen', 'haribo', 'katjes', 'fruchtgummi', 'weingummi', 'lakritze', 'saure gummis',
+                'bonbons', 'lutscher', 'lollipops', 'kaubonbons', 'pfefferminzbonbons', 'hustenbonbons',
+                'kekse', 'plätzchen', 'cookies', 'butterkekse', 'leibniz', 'oreo', 'prinzen rolle', 'pick up',
+                'chips', 'kartoffelchips', 'paprikachips', 'salzige chips', 'pringles', 'funny frisch', 'chio',
+                'nüsse', 'erdnüsse', 'cashews', 'mandeln', 'haselnüsse', 'walnüsse', 'pistazien', 'macadamia',
+                'salzstangen', 'brezeln', 'flips', 'erdnussflips', 'mais flips', 'popcorn', 'nachos',
+                'müsliriegel', 'energieriegel', 'proteinriegel', 'cornflakes', 'müsli', 'granola'
+            ],
+            'gewürze': [
+                'salz', 'pfeffer', 'schwarzer pfeffer', 'weißer pfeffer', 'rosa pfeffer', 'cayennepfeffer',
+                'paprika', 'paprikapulver', 'edelsüß', 'rosenscharf', 'geräuchert',
+                'curry', 'currypulver', 'garam masala', 'kurkuma', 'kreuzkümmel', 'koriander', 'kardamom',
+                'zimt', 'muskat', 'muskatblüte', 'nelken', 'anis', 'fenchel', 'kümmel',
+                'oregano', 'basilikum', 'thymian', 'rosmarin', 'majoran', 'salbei', 'estragon',
+                'petersilie', 'schnittlauch', 'dill', 'kerbel', 'liebstöckel',
+                'knoblauchpulver', 'zwiebelpulver', 'ingwerpulver', 'chilipulver', 'cayenne',
+                'italienische kräuter', 'kräuter der provence', 'ras el hanout', 'baharat',
+                'gewürzmischung', 'grillgewürz', 'bratkartoffelgewürz', 'salatgewürz',
+                'suppenwürze', 'gemüsebrühe', 'hühnerbrühe', 'rinderbrühe', 'instant brühe'
+            ],
+            'haushalt': [
+                'spülmittel', 'geschirrspülmittel', 'fairy', 'pril', 'fit', 'somat', 'spülmaschinentabs', 'klarspüler',
+                'waschmittel', 'vollwaschmittel', 'colorwaschmittel', 'feinwaschmittel', 'weichspüler', 'lenor',
+                'ariel', 'persil', 'frosch', 'ecover', 'waschpulver', 'flüssigwaschmittel', 'waschmittel pods',
+                'putzmittel', 'allzweckreiniger', 'badreiniger', 'wc reiniger', 'küchenreiniger', 'glasreiniger',
+                'sagrotan', 'cillit bang', 'domestos', 'meister proper', 'ajax', 'viss', 'sidolin',
+                'desinfektionsmittel', 'chlorreiniger', 'schimmelentferner', 'kalkreiniger', 'entkalker',
+                'toilettenpapier', 'klopapier', 'zewa', 'hakle', 'charmin', 'küchenrollen', 'küchenpapier',
+                'taschentücher', 'tempo', 'servietten', 'papiertücher', 'damenhygiene', 'binden', 'tampons',
+                'müllbeutel', 'biomüllbeutel', 'gelber sack', 'gefrierbeutel', 'frischhaltefolie', 'alufolie',
+                'backpapier', 'pergamentpapier', 'frischhaltedosen', 'tupperware', 'vorratsdosen',
+                'schwamm', 'schwämme', 'spülschwamm', 'topfschwamm', 'scheuerschwamm', 'microfasertuch',
+                'putzlappen', 'wischtuch', 'staubwedel', 'besen', 'handfeger', 'kehrschaufel', 'wischmopp',
+                'staubsaugerbeutel', 'lufterfrischer', 'raumduft', 'kerzen', 'teelichter', 'feuerzeug', 'streichhölzer'
+            ],
+            'hygiene': [
+                'shampoo', 'haarshampoo', 'baby shampoo', 'trockenshampoo', 'spülung', 'haarspülung', 'conditioner',
+                'haarkur', 'haarmaske', 'haaröl', 'haarwachs', 'haargel', 'haarspray', 'haarschaum',
+                'duschgel', 'duschbad', 'bodylotion', 'körperlotion', 'bodymilk', 'körpercreme', 'handcreme',
+                'seife', 'kernseife', 'flüssigseife', 'handseife', 'intimseife', 'naturseife', 'aleppo seife',
+                'zahnpasta', 'zahnbürste', 'elektrische zahnbürste', 'zahnseide', 'mundspülung', 'mundwasser',
+                'zahnpflege', 'zahnreinigung', 'prothesenhaftcreme', 'gebissreiniger',
+                'deo', 'deodorant', 'antitranspirant', 'parfüm', 'parfum', 'eau de toilette', 'aftershave',
+                'rasierer', 'einwegrasierer', 'rasierklingen', 'rasierschaum', 'rasiergel', 'rasieröl',
+                'creme', 'gesichtscreme', 'tagescreme', 'nachtcreme', 'augencreme', 'anti aging creme',
+                'sonnencreme', 'sonnenschutz', 'lippenbalsam', 'lippenstift', 'lipgloss', 'lippenpflege',
+                'make up', 'foundation', 'concealer', 'puder', 'rouge', 'mascara', 'eyeliner', 'lidschatten',
+                'nagellack', 'nagelfeile', 'nagelschere', 'nagelknipser', 'wattepads', 'wattestäbchen',
+                'damenhygiene', 'binden', 'slipeinlagen', 'tampons', 'menstruationstasse', 'kondome', 'verhütung'
+            ],
+            'baby': [
+                'windel', 'windeln', 'pampers', 'babylove', 'huggies', 'newborn', 'größe 1', 'größe 2', 'größe 3',
+                'babybrei', 'babymilch', 'säuglingsmilch', 'pre nahrung', '1er nahrung', '2er nahrung', '3er nahrung',
+                'aptamil', 'hipp', 'milupa', 'bebivita', 'humana', 'nestlé', 'beba',
+                'babykost', 'beikost', 'babygläschen', 'quetschie', 'fruchtmus', 'gemüsebrei', 'fleischbrei',
+                'babynahrung', 'kindermilch', 'folgemilch', 'kindertee', 'babytee', 'fencheltee baby',
+                'schnuller', 'nuckel', 'beruhigungssauger', 'flasche', 'babyflasche', 'trinkflasche', 'sippy cup',
+                'lätzchen', 'babylätzchen', 'spucktuch', 'mulltuch', 'stoffwindel',
+                'babycreme', 'wundschutzcreme', 'babypuder', 'babyöl', 'babybad', 'babyshampoo',
+                'spielzeug', 'babyspielzeug', 'rassel', 'beißring', 'kuscheltier', 'babybuch', 'mobile',
+                'kindernahrung', 'kindermüsli', 'kinderkeks', 'reiswaffeln baby', 'kindersaft'
+            ],
+            'tiernahrung': [
+                'hundefutter', 'trockenfutter hund', 'nassfutter hund', 'welpenfutter', 'senior hundefutter',
+                'katzenfutter', 'trockenfutter katze', 'nassfutter katze', 'kittenfutter', 'senior katzenfutter',
+                'leckerli', 'hundeleckerli', 'katzenleckerli', 'hundesnack', 'kauartikel', 'kauknochen',
+                'katzenstreu', 'klumpstreu', 'silikatstreu', 'naturstreu', 'öko katzenstreu',
+                'tierbedarf', 'hundenapf', 'katzennapf', 'wasserspender', 'futternapf', 'hundeleine',
+                'vogelsamen', 'vogelfutter', 'wellensittichfutter', 'kanarienfutter', 'meisenfutter',
+                'fischfutter', 'aquariumfutter', 'goldfischfutter', 'tropenfischfutter',
+                'hamsterfutter', 'meerschweinchenfutter', 'kaninchenfutter', 'hasenfutter', 'nagerfutter',
+                'royal canin', 'hills', 'purina', 'whiskas', 'felix', 'sheba', 'pedigree', 'cesar'
+            ]
+        };
+
+        function getCategoryFromName(itemName) {
+            const name = itemName.toLowerCase();
+            
+            for (const [category, keywords] of Object.entries(categoryKeywords)) {
+                for (const keyword of keywords) {
+                    if (name.includes(keyword)) {
+                        return category;
+                    }
+                }
+            }
+            
+            return 'sonstiges';
+        }
+
+        function getCategoryDisplayName(category) {
+            const categoryDisplayNames = {
+                'obst-gemüse': 'Obst & Gemüse',
+                'fleisch-fisch': 'Fleisch & Fisch',
+                'milchprodukte': 'Milchprodukte & Eier',
+                'getränke': 'Getränke',
+                'backwaren': 'Brot & Backwaren',
+                'konserven': 'Konserven & Haltbares',
+                'tiefkühl': 'Tiefkühlkost',
+                'süßwaren': 'Süßwaren & Snacks',
+                'gewürze': 'Gewürze & Öle',
+                'haushalt': 'Haushalt & Reinigung',
+                'hygiene': 'Körperpflege & Hygiene',
+                'baby': 'Baby & Kind',
+                'tiernahrung': 'Tiernahrung',
+                'sonstiges': 'Sonstiges'
+            };
+            return categoryDisplayNames[category] || category;
+        }
+
+        // Authentication Functions
+        function showAuthStatus(message, isError = false) {
+            authStatus.textContent = message;
+            authStatus.className = `auth-status ${isError ? 'error' : 'success'}`;
+            authStatus.style.display = 'block';
+            
+            setTimeout(() => {
+                authStatus.style.display = 'none';
+            }, 5000);
+        }
+
+        function showAuthMessage(message) {
+            authMessage.textContent = message;
+            setTimeout(() => {
+                authMessage.textContent = '';
+            }, 5000);
+        }
+
+        function updateUIForAuthState(user) {
+            if (user) {
+                // User is signed in
+                currentUser = user;
+                console.log('User UID:', user.uid);
+                
+                // Check person assignment from Firebase
+                const personRef = ref(db, `personZuordnung/${user.uid}`);
+                get(personRef).then((snapshot) => {
+                    const dataGroup = snapshot.val() || 'da3';
+                    console.log('Assigned to group:', dataGroup);
+                    dbPath = `urlaubskalender/${dataGroup}/einkaufsliste`;
+                    
+                    // Update UI elements
+                    emailInput.style.display = 'none';
+                    passwordInput.style.display = 'none';
+                    loginBtn.style.display = 'none';
+                    logoutBtn.style.display = 'block';
+                    
+                    mainContent.classList.remove('content-disabled');
+                    authMessageMain.style.display = 'none';
+                    userInfo.style.display = 'flex';
+                    userEmail.textContent = user.email;
+                    
+                    showAuthStatus(`Angemeldet als: ${user.email} (Gruppe: ${dataGroup})`);
+                    
+                    // Load user data
+                    loadUserData();
+                }).catch((error) => {
+                    console.error('Error getting person assignment:', error);
+                    // Use fallback
+                    const userMapping = {
+                        'De9HRoumdseQ8L3o6FiF1F6j7Ln1': 'da1',
+                        'W4ZvcKIXRdRJ9St7fB6sKTMF2Pa2': 'da2', 
+                        'tUWzdAF52IYC0cTNqvNJANbm9uB3': 'da1',
+                        'utCtWMOrZhZWGWo71GDzeQPi3eF2': 'da2'
+                    };
+                    const dataGroup = userMapping[user.uid] || 'da3';
+                    dbPath = `urlaubskalender/${dataGroup}/einkaufsliste`;
+                    loadUserData();
+                });
+                
+            } else {
+                // User is signed out
+                currentUser = null;
+                dbPath = '';
+                
+                // Update UI elements
+                emailInput.style.display = 'block';
+                passwordInput.style.display = 'block';
+                loginBtn.style.display = 'block';
+                logoutBtn.style.display = 'none';
+                
+                mainContent.classList.add('content-disabled');
+                authMessageMain.style.display = 'block';
+                userInfo.style.display = 'none';
+                
+                showAuthStatus('Nicht angemeldet', true);
+                
+                // Clear data
+                shoppingItems = [];
+                filteredItems = [];
+                updateShoppingList();
+            }
+        }
+
+        // Login function
+        async function login() {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!email || !password) {
+                showAuthMessage('Bitte Email und Passwort eingeben');
+                return;
+            }
+            
+            try {
+                loginBtn.disabled = true;
+                loginBtn.textContent = 'Anmelden...';
+                
+                await signInWithEmailAndPassword(auth, email, password);
+                
+                // Clear inputs
+                emailInput.value = '';
+                passwordInput.value = '';
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showAuthMessage(`Anmeldung fehlgeschlagen: ${error.message}`);
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            }
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error('Logout error:', error);
+                showAuthMessage(`Abmeldung fehlgeschlagen: ${error.message}`);
+            }
+        }
+
+        // Load user data from Firebase
+        async function loadUserData() {
+            if (!currentUser || !dbPath) {
+                console.log('Kein Benutzer angemeldet oder Pfad nicht gesetzt');
+                return;
+            }
+            
+            try {
+                console.log('Lade Einkaufsliste für:', currentUser.email);
+                console.log('Datenpfad:', dbPath);
+                
+                const userRef = ref(db, dbPath);
+                const snapshot = await get(userRef);
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    shoppingItems = Array.isArray(data) ? data : Object.values(data || {});
+                    applyFilters(); // Apply filters instead of direct update
+                    console.log('Einkaufsliste erfolgreich geladen:', shoppingItems.length, 'Artikel');
+                } else {
+                    console.log('Keine existierenden Daten gefunden, erstelle neue Liste');
+                    shoppingItems = [];
+                    applyFilters();
+                }
+            } catch (error) {
+                console.error('Error loading shopping items:', error);
+                showAuthMessage('Fehler beim Laden der Daten: ' + error.message);
+            }
+        }
+
+        // Save user data to Firebase
+        async function saveUserData() {
+            if (!currentUser || !dbPath) return;
+            
+            try {
+                console.log('Speichere Einkaufsliste mit', shoppingItems.length, 'Artikeln');
+                console.log('Pfad:', dbPath);
+                
+                await set(ref(db, dbPath), shoppingItems);
+                console.log('Daten erfolgreich gespeichert');
+            } catch (error) {
+                console.error('Error saving user data:', error);
+                showAuthMessage('Fehler beim Speichern: ' + error.message);
+            }
+        }
+
+        // Add new item
+        window.addItem = function() {
+            if (!currentUser) {
+                showAuthMessage('Bitte erst anmelden');
+                return;
+            }
+
+            const name = document.getElementById('item-name').value.trim();
+            const quantity = parseInt(document.getElementById('item-quantity').value) || 1;
+            let category = document.getElementById('item-category').value;
+            const notes = document.getElementById('item-notes').value.trim();
+
+            if (!name) {
+                alert('Bitte Artikelname eingeben');
+                return;
+            }
+
+            // Auto-categorize if needed
+            if (category === 'auto') {
+                category = getCategoryFromName(name);
+            }
+
+            const newItem = {
+                id: Date.now(),
+                name: name,
+                quantity: quantity,
+                category: category,
+                notes: notes,
+                completed: false,
+                dateAdded: new Date().toISOString()
+            };
+
+            shoppingItems.unshift(newItem);
+            saveUserData();
+            applyFilters();
+
+            // Clear form
+            document.getElementById('item-name').value = '';
+            document.getElementById('item-quantity').value = '1';
+            document.getElementById('item-category').value = 'auto';
+            document.getElementById('item-notes').value = '';
+            
+            showAuthMessage('Artikel hinzugefügt');
+        };
+
+        // Toggle item completion
+        window.toggleItem = function(itemId) {
+            if (!currentUser) return;
+
+            const item = shoppingItems.find(item => item.id === itemId);
+            if (item) {
+                item.completed = !item.completed;
+                saveUserData();
+                applyFilters();
+            }
+        };
+
+        window.editItem = function(itemId) {
+    if (!currentUser) return;
+
+    const item = shoppingItems.find(item => item.id === itemId);
+    if (!item) return;
+
+    const container = document.querySelector(`.shopping-item input[type="checkbox"][onchange="toggleItem(${itemId})"]`).closest('.shopping-item');
+
+    container.innerHTML = `
+        <div></div>
+        <div class="item-info">
+            <input type="text" id="edit-name-${itemId}" value="${escapeHtml(item.name)}" style="width: 100%; padding: 0.3rem;">
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.3rem;">
+                <input type="number" id="edit-quantity-${itemId}" value="${item.quantity}" min="1" style="width: 60px; padding: 0.3rem;">
+                <select id="edit-category-${itemId}" style="flex: 1; padding: 0.3rem;">
+                    ${Object.entries(getCategoryDisplayNameMap()).map(([key, val]) =>
+                        `<option value="${key}" ${key === item.category ? 'selected' : ''}>${val}</option>`).join('')}
+                </select>
+            </div>
+            <textarea id="edit-notes-${itemId}" placeholder="Notizen..." style="width: 100%; padding: 0.3rem; margin-top: 0.3rem; resize: vertical;">${escapeHtml(item.notes || '')}</textarea>
+        </div>
+        <div class="item-actions">
+            <button class="edit-btn" onclick="saveItemEdit(${itemId})"><i class="fas fa-check"></i></button>
+            <button onclick="cancelEdit(${itemId})"><i class="fas fa-times"></i></button>
+        </div>
+    `;
+};
+
+
+window.saveItemEdit = function(itemId) {
+    const name = document.getElementById(`edit-name-${itemId}`).value.trim();
+    const quantity = parseInt(document.getElementById(`edit-quantity-${itemId}`).value);
+    const category = document.getElementById(`edit-category-${itemId}`).value;
+    const notes = document.getElementById(`edit-notes-${itemId}`).value.trim();
+
+    if (!name || quantity < 1 || isNaN(quantity)) {
+        showAuthMessage('Ungültige Eingaben');
+        return;
+    }
+
+    const item = shoppingItems.find(item => item.id === itemId);
+    item.name = name;
+    item.quantity = quantity;
+    item.category = category;
+    item.notes = notes;
+
+    saveUserData();
+    applyFilters();
+    showAuthMessage('Artikel aktualisiert');
+};
+
+window.cancelEdit = function(itemId) {
+    applyFilters(); // Setzt die Anzeige zurück
+};
+
+
+function getCategoryDisplayNameMap() {
+    return {
+        'obst-gemüse': 'Obst & Gemüse',
+        'fleisch-fisch': 'Fleisch & Fisch',
+        'milchprodukte': 'Milchprodukte & Eier',
+        'getränke': 'Getränke',
+        'backwaren': 'Brot & Backwaren',
+        'konserven': 'Konserven & Haltbares',
+        'tiefkühl': 'Tiefkühlkost',
+        'süßwaren': 'Süßwaren & Snacks',
+        'gewürze': 'Gewürze & Öle',
+        'haushalt': 'Haushalt & Reinigung',
+        'hygiene': 'Körperpflege & Hygiene',
+        'baby': 'Baby & Kind',
+        'tiernahrung': 'Tiernahrung',
+        'sonstiges': 'Sonstiges'
+    };
+}
+
+        // Edit item quantity
+        window.editQuantity = function(itemId) {
+            if (!currentUser) return;
+
+            const item = shoppingItems.find(item => item.id === itemId);
+            if (!item) return;
+
+            const newQuantity = prompt('Menge bearbeiten:', item.quantity);
+            const quantity = parseInt(newQuantity);
+            if (quantity && quantity > 0 && quantity !== item.quantity) {
+                item.quantity = quantity;
+                saveUserData();
+                applyFilters();
+                showAuthMessage('Menge bearbeitet');
+            }
+        };
+
+        // Edit item category
+        window.editCategory = function(itemId) {
+            if (!currentUser) return;
+
+            const item = shoppingItems.find(item => item.id === itemId);
+            if (!item) return;
+
+            const categories = [
+                'obst-gemüse', 'fleisch-fisch', 'milchprodukte', 'getränke', 
+                'backwaren', 'konserven', 'tiefkühl', 'süßwaren', 'gewürze', 
+                'haushalt', 'hygiene', 'baby', 'tiernahrung', 'sonstiges'
+            ];
+
+            const categoryDisplayNames = {
+                'obst-gemüse': 'Obst & Gemüse',
+                'fleisch-fisch': 'Fleisch & Fisch',
+                'milchprodukte': 'Milchprodukte & Eier',
+                'getränke': 'Getränke',
+                'backwaren': 'Brot & Backwaren',
+                'konserven': 'Konserven & Haltbares',
+                'tiefkühl': 'Tiefkühlkost',
+                'süßwaren': 'Süßwaren & Snacks',
+                'gewürze': 'Gewürze & Öle',
+                'haushalt': 'Haushalt & Reinigung',
+                'hygiene': 'Körperpflege & Hygiene',
+                'baby': 'Baby & Kind',
+                'tiernahrung': 'Tiernahrung',
+                'sonstiges': 'Sonstiges'
+            };
+
+            let options = 'Kategorie auswählen:\n\n';
+            categories.forEach((cat, index) => {
+                options += `${index + 1}. ${categoryDisplayNames[cat]}\n`;
+            });
+
+            const choice = prompt(options + '\nBitte Nummer eingeben (1-' + categories.length + '):');
+            const categoryIndex = parseInt(choice) - 1;
+            
+            if (categoryIndex >= 0 && categoryIndex < categories.length) {
+                const newCategory = categories[categoryIndex];
+                if (newCategory !== item.category) {
+                    item.category = newCategory;
+                    saveUserData();
+                    applyFilters();
+                    showAuthMessage('Kategorie bearbeitet');
+                }
+            }
+        };
+
+        // Update item notes
+        window.updateItemNotes = function(itemId, notes) {
+            if (!currentUser) return;
+            
+            const item = shoppingItems.find(item => item.id === itemId);
+            if (item) {
+                item.notes = notes;
+                saveUserData();
+            }
+        };
+
+        // Delete item
+        window.deleteItem = function(itemId) {
+            if (!currentUser) return;
+
+            if (confirm('Artikel wirklich löschen?')) {
+                shoppingItems = shoppingItems.filter(item => item.id !== itemId);
+                saveUserData();
+                applyFilters();
+                showAuthMessage('Artikel gelöscht');
+            }
+        };
+
+        // Update shopping list display
+        function updateShoppingList() {
+            const displayItems = filteredItems.length > 0 ? filteredItems : shoppingItems;
+
+            if (displayItems.length === 0) {
+                const hasActiveFilters = searchFilter.value || categoryFilter.value || statusFilter.value;
+                if (hasActiveFilters) {
+                    shoppingList.innerHTML = '<div class="no-items-message">Keine Artikel entsprechen den aktuellen Filtern.</div>';
+                } else {
+                    shoppingList.innerHTML = '<div class="no-items-message">Keine Artikel in der Liste. Fügen Sie Ihren ersten Artikel hinzu!</div>';
+                }
+                return;
+            }
+
+            const html = displayItems.map(item => `
+                <div class="shopping-item ${item.completed ? 'completed' : ''}">
+                    <input type="checkbox" class="item-checkbox" 
+                           ${item.completed ? 'checked' : ''} 
+                           onchange="toggleItem(${item.id})">
+                    <div class="item-info">
+                        <div class="item-name" onclick="editItem(${item.id})" style="cursor: pointer;" title="Klicken zum Bearbeiten">${escapeHtml(item.name)}</div>
+                        <div class="item-details">
+                            <span onclick="editQuantity(${item.id})" style="cursor: pointer;" title="Klicken zum Bearbeiten">${item.quantity}x</span> • 
+                            <span onclick="editCategory(${item.id})" style="cursor: pointer;" title="Klicken zum Bearbeiten">${getCategoryDisplayName(item.category)}</span>
+                        </div>
+                        ${item.notes ? `<div class="item-notes">${escapeHtml(item.notes)}</div>` : ''}
+                        <input type="text" class="item-notes-input" 
+                               placeholder="Notizen hinzufügen..." 
+                               value="${escapeHtml(item.notes || '')}"
+                               onblur="updateItemNotes(${item.id}, this.value)"
+                               onkeypress="if(event.key==='Enter') this.blur()">
+                    </div>
+                    <div class="item-actions">
+                        <button class="edit-btn" onclick="editItem(${item.id})" title="Bearbeiten">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteItem(${item.id})" title="Löschen">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            shoppingList.innerHTML = html;
+        }
+
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // PDF Export Function
+        function exportToPDF() {
+            if (!currentUser) {
+                showAuthMessage('Bitte erst anmelden');
+                return;
+            }
+            
+            const itemsToExport = filteredItems.length > 0 ? filteredItems : shoppingItems;
+            
+            if (itemsToExport.length === 0) {
+                alert('Die Einkaufsliste ist leer. Es gibt nichts zu exportieren.');
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Clean text function to remove problematic characters
+                function cleanText(text) {
+                    if (!text) return '';
+                    return text.replace(/[ØÜÝ&]/g, '').trim();
+                }
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(20);
+                doc.text(cleanText('Einkaufsliste'), 20, 30);
+                
+                doc.setFontSize(12);
+                doc.text(cleanText(`Benutzer: ${currentUser.email}`), 20, 45);
+                doc.text(cleanText(`Erstellt am: ${new Date().toLocaleDateString('de-DE')}`), 20, 55);
+                
+                doc.line(20, 65, 190, 65);
+                
+                let yPosition = 80;
+                
+                itemsToExport.forEach(item => {
+                    const checkbox = item.completed ? '[x]' : '[ ]';
+                    let itemText = cleanText(`${checkbox} ${item.quantity}x ${item.name} (${getCategoryDisplayName(item.category)})`);
+                    
+                    if (yPosition > 270) {
+                        doc.addPage();
+                        yPosition = 30;
+                    }
+                    
+                    doc.text(itemText, 20, yPosition);
+                    yPosition += 8;
+                    
+                    // Add notes if they exist
+                    if (item.notes) {
+                        doc.setFontSize(10);
+                        doc.text(cleanText(`   Notizen: ${item.notes}`), 20, yPosition);
+                        yPosition += 6;
+                        doc.setFontSize(12);
+                    }
+                });
+                
+                // Add statistics
+                yPosition += 10;
+                if (yPosition > 270) {
+                    doc.addPage();
+                    yPosition = 30;
+                }
+                
+                doc.setFontSize(10);
+                const totalItems = itemsToExport.length;
+                const completedItems = itemsToExport.filter(item => item.completed).length;
+                const pendingItems = totalItems - completedItems;
+
+                doc.text(cleanText(`Gesamt: ${totalItems} Artikel`), 20, yPosition);
+                doc.text(cleanText(`Erledigt: ${completedItems} Artikel`), 20, yPosition + 10);
+                doc.text(cleanText(`Offen: ${pendingItems} Artikel`), 20, yPosition + 20);
+                
+                const fileName = `Einkaufsliste_${new Date().toLocaleDateString('de-DE').replace(/\./g, '-')}.pdf`;
+                doc.save(fileName);
+                
+                showAuthMessage('PDF erfolgreich erstellt und heruntergeladen!');
+                
+            } catch (error) {
+                console.error('Error creating PDF:', error);
+                alert('Fehler beim Erstellen der PDF-Datei.');
+            }
+        }
+
+        // Event Listeners
+        loginBtn.addEventListener('click', login);
+        logoutBtn.addEventListener('click', logout);
+        
+        // PDF Export Event Listener
+        document.getElementById('menu-export-pdf').addEventListener('click', exportToPDF);
+
+        // Allow Enter key to login
+        emailInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
+
+        // Allow Enter key to add item
+        document.getElementById('item-name').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addItem();
+        });
+
+        // Clear list
+        document.getElementById('menu-clear-list').addEventListener('click', function() {
+            if (!currentUser) {
+                showAuthMessage('Bitte erst anmelden');
+                return;
+            }
+            
+            if (confirm('Liste wirklich leeren?')) {
+                shoppingItems = [];
+                filteredItems = [];
+                updateShoppingList();
+                saveUserData();
+                showAuthMessage('Liste geleert');
+            }
+        });
+
+        // Auth state listener
+        onAuthStateChanged(auth, updateUIForAuthState);
+
+        // Initialize the application
+        console.log('Smart Einkaufsliste initialized. Waiting for authentication...');
+        
+       document.getElementById('menu-clear-completed').addEventListener('click', () => {
+    if (!currentUser) return;
+
+    const count = shoppingItems.filter(item => item.completed).length;
+    if (count === 0) {
+        showAuthMessage('Keine erledigten Artikel zum Löschen');
+        return;
+    }
+
+    if (confirm(`${count} erledigte Artikel wirklich löschen?`)) {
+        shoppingItems = shoppingItems.filter(item => !item.completed);
+        saveUserData();
+        applyFilters();
+        showAuthMessage('Erledigte Artikel gelöscht');
+    }
+}); 
+        
+    </script>
+</body>
+</html>
